@@ -1,16 +1,11 @@
 #pragma once
 
 #include <filesystem>
+#include <fstream>
 
-inline std::filesystem::path abs_exe_directory()
+namespace utils
 {
-    #if defined(_MSC_VER)
-        wchar_t path[FILENAME_MAX] = { 0 };
-        GetModuleFileNameW(nullptr, path, FILENAME_MAX);
-        return std::filesystem::path(path).parent_path().string();
-    #else
-        char path[FILENAME_MAX];
-        ssize_t count = readlink("/proc/self/exe", path, FILENAME_MAX);
-        return std::filesystem::path(std::string(path, (count > 0) ? count: 0)).parent_path().string();
-    #endif
-}
+std::filesystem::path abs_exe_directory();
+void load_columns(std::vector<int>& col1, std::vector<int>& col2, const std::filesystem::path& file_path);
+std::vector<std::vector<int>> load_rows(const std::filesystem::path& file_path);
+}  // namespace utils
