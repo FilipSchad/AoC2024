@@ -1,0 +1,38 @@
+BasedOnStyle: LLVM
+Language: Cpp
+IndentWidth: 4
+TabWidth: 4
+UseTab: ForIndentation
+AccessModifierOffset: -4
+AlignConsecutiveAssignments: false
+AllowAllParametersOfDeclarationOnNextLine: true
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakTemplateDeclarations: true
+BinPackParameters: false
+Cpp11BracedListStyle: true
+BreakBeforeInheritanceComma: true
+BreakConstructorInitializers: BeforeComma
+BreakBeforeBinaryOperators: NonAssignment
+SpaceBeforeAssignmentOperators: true
+SpacesBeforeTrailingComments: 2
+PointerAlignment: Left
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: true
+  AfterClass: true
+  BeforeCatch: true
+  BeforeElse: true
+ColumnLimit: 120
+CommentPragmas: "[|]"
+ForEachMacros:
+  - foreach
+  - Q_FOREACH
+  - BOOST_FOREACH
+  - BOOST_TEST_CONTEXT
+  - CORE_SYNCHRONIZED
+  - VG_SAVE_MATRIX
