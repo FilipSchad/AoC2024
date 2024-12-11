@@ -45,12 +45,32 @@ int solve_day1(int part, const std::filesystem::path& input_file)
 	throw std::logic_error(std::format("Unknown part {}", part));
 }
 
+TEST_SUITE("Day1")
+{
+	auto small_input_file = utils::abs_exe_directory() / "input" / "day1.small.txt";
+	auto full_input_file = utils::abs_exe_directory() / "input" / "day1.full.txt";
+
+	TEST_CASE("Part1")
+	{
+		CHECK(solve_day1(1, small_input_file) == 11);
+		CHECK(solve_day1(1, full_input_file) == 2'815'556);
+	}
+
+	TEST_CASE("Part2")
+	{
+		CHECK(solve_day1(2, small_input_file) == 31);
+		CHECK(solve_day1(2, full_input_file) == 23'927'637);
+	}
+}
+
 bool row_is_stable(const std::vector<int>& row)
 {
 	std::vector<int> adj_row(row.size());
 	std::adjacent_difference(row.begin(), row.end(), adj_row.begin());
-	const bool stable_decreasing = std::all_of(adj_row.begin()+1, adj_row.end(), [](auto val) { return val < 0 && val > -4;});
-	const bool stable_increasing = std::all_of(adj_row.begin()+1, adj_row.end(), [](auto val) { return val > 0 && val < 4;});
+	const bool stable_decreasing =
+	    std::all_of(adj_row.begin() + 1, adj_row.end(), [](auto val) { return val < 0 && val > -4; });
+	const bool stable_increasing =
+	    std::all_of(adj_row.begin() + 1, adj_row.end(), [](auto val) { return val > 0 && val < 4; });
 	if (stable_increasing || stable_decreasing) {
 		return true;
 	}
@@ -74,7 +94,7 @@ int solve_day2(int part, const std::filesystem::path& input_file)
 		else if (use_dampener) {
 			for (std::size_t idx = 0; idx < row.size(); ++idx) {
 				auto row2 = row;
-				row2.erase(row2.begin()+idx);
+				row2.erase(row2.begin() + idx);
 				if (row_is_stable(row2)) {
 					++result;
 					break;
@@ -84,24 +104,6 @@ int solve_day2(int part, const std::filesystem::path& input_file)
 	}
 
 	return result;
-}
-
-TEST_SUITE("Day1")
-{
-	auto small_input_file = utils::abs_exe_directory() / "input" / "day1.small.txt";
-	auto full_input_file = utils::abs_exe_directory() / "input" / "day1.full.txt";
-
-	TEST_CASE("Part1")
-	{
-		CHECK(solve_day1(1, small_input_file) == 11);
-		CHECK(solve_day1(1, full_input_file) == 2'815'556);
-	}
-
-	TEST_CASE("Part2")
-	{
-		CHECK(solve_day1(2, small_input_file) == 31);
-		CHECK(solve_day1(2, full_input_file) == 23'927'637);
-	}
 }
 
 TEST_SUITE("Day2")
@@ -119,5 +121,75 @@ TEST_SUITE("Day2")
 	{
 		CHECK(solve_day2(2, small_input_file) == 4);
 		CHECK(solve_day2(2, full_input_file) == 290);
+	}
+}
+
+
+int solve_day3(int part, const std::filesystem::path& input_file)
+{
+	std::ifstream in_file(input_file, std::ios::in | std::ios::binary);
+	const auto sz = std::filesystem::file_size(input_file);
+	std::string line(sz, '\0');
+	in_file.read(line.data(), sz);
+
+	auto pos = line.find("mul(", 0);
+	auto disabling_pos = line.find("don't()", 0);
+
+	// Do not use disabled parts in Part1
+	if (part == 1) {
+		disabling_pos = std::string::npos;
+	}
+	int result = 0;
+	while (pos != std::string::npos) {
+		pos += 4;
+		if (disabling_pos == std::string::npos || pos < disabling_pos) {
+			std::string num1_str;
+			std::string num2_str;
+			while (pos < line.size() && std::isdigit(line[pos])) {
+				num1_str += line[pos];
+				++pos;
+			}
+			if (line[pos] == ',') {
+				++pos;
+				while (pos < line.size() && std::isdigit(line[pos])) {
+					num2_str += line[pos];
+					++pos;
+				}
+			}
+			if (!num1_str.empty() && !num2_str.empty() && line[pos] == ')') {
+				++pos;
+				result += std::stoi(num1_str) * std::stoi(num2_str);
+			}
+		}
+		else {
+			pos = line.find("do()", pos);
+			if (pos != std::string::npos) {
+				pos += 4;
+				disabling_pos = line.find("don't()", pos);
+			}
+		}
+		
+		if (pos != std::string::npos) {
+			pos = line.find("mul(", pos);
+		}
+	}
+	return result;
+}
+
+TEST_SUITE("Day3")
+{
+	auto small_input_file = utils::abs_exe_directory() / "input" / "day3.small.txt";
+	auto full_input_file = utils::abs_exe_directory() / "input" / "day3.full.txt";
+
+	TEST_CASE("Part1")
+	{
+		CHECK(solve_day3(1, small_input_file) == 161);
+		CHECK(solve_day3(1, full_input_file) == 170'807'108);
+	}
+
+	TEST_CASE("Part2")
+	{
+		CHECK(solve_day3(2, small_input_file) == 48);
+		CHECK(solve_day3(2, full_input_file) == 74'838'033);
 	}
 }
