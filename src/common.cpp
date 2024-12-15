@@ -32,19 +32,3 @@ void utils::load_columns(std::vector<int>& col1, std::vector<int>& col2, const s
 		col2.emplace_back(second_col);
 	}
 }
-
-std::vector<std::vector<int>> utils::load_rows(const std::filesystem::path& file_path)
-{
-	std::vector<std::vector<int>> ret;
-	std::ifstream in_file(file_path);
-	for (std::string line; std::getline(in_file, line);) {
-		std::vector<int> row;
-		std::istringstream istream(line);
-		int col;
-		while (istream >> col) {
-			row.emplace_back(col);
-		}
-		ret.emplace_back(row);
-	}
-	return ret;
-}
