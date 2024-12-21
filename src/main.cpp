@@ -348,3 +348,121 @@ TEST_SUITE("Day4")
 		CHECK(solve_day4(2, full_input_file) == 1'950);
 	}
 }
+
+bool is_ordered(const std::vector<std::pair<int, int>>& order_rules, std::vector<int> update)
+{
+	bool ok = true;
+	for (const auto& [a, b] : order_rules) {
+		const auto aIt = std::ranges::find(update, a);
+		if (aIt != update.end()) {
+			const auto bIt = std::ranges::find(update, b);
+			if (bIt != update.end()) {
+				if (std::distance(aIt, bIt) < 0) {
+					ok = false;
+					break;
+				}
+			}
+		}
+	}
+	return ok;
+}
+
+void swap_wrong(const std::vector<std::pair<int, int>>& order_rules, std::vector<int>& update)
+{
+	for (std::size_t i = 0; i < update.size() - 1; ++i) {
+		auto goodOrderIt = std::ranges::find(order_rules, std::make_pair(update[i], update[i + 1]));
+		if (goodOrderIt == order_rules.end()) {
+			auto wrongOrderIt = std::ranges::find(order_rules, std::make_pair(update[i + 1], update[i]));
+			if (wrongOrderIt != order_rules.end()) {
+				std::swap(update[i], update[i + 1]);
+			}
+		}
+	}
+}
+
+int solve_day5(int part, const std::filesystem::path& input_file)
+{
+	std::ifstream in_file(input_file, std::ios::in | std::ios::binary);
+	bool read_pairs = true;
+	std::vector<std::pair<int, int>> order_rules;
+	std::vector<std::vector<int>> updates;
+	for (std::string line; std::getline(in_file, line);) {
+		if (line != "\r") {
+			if (read_pairs) {
+				const auto pos = line.find('|');
+				order_rules.emplace_back(std::stoi(line.substr(0, pos)),
+				                         std::stoi(line.substr(pos + 1, line.size() - pos - 2)));
+			}
+			else {
+				auto pos = line.find(',');
+				std::vector<int> nums;
+				nums.emplace_back(std::stoi(line.substr(0, pos)));
+				while (pos != std::string::npos) {
+					auto next_pos = line.find(',', pos + 1);
+					if (next_pos != std::string::npos) {
+						nums.emplace_back(std::stoi(line.substr(pos + 1, next_pos)));
+					}
+					else {
+						nums.emplace_back(std::stoi(line.substr(pos + 1, line.size() - pos - 2)));
+					}
+					pos = next_pos;
+				}
+				updates.emplace_back(std::move(nums));
+			}
+		}
+		else {
+			read_pairs = false;
+		}
+	}
+
+	
+	// Verify rules over updates
+	int result = 0;
+	std::size_t update_idx = 0;
+	std::vector<std::size_t> wrong_updates;
+	for (const auto& update : updates) {
+		if (is_ordered(order_rules, update)) {
+			result += update[update.size() / 2];
+		}
+		else {
+			wrong_updates.emplace_back(update_idx);
+		}
+		++update_idx;
+	}
+
+	if (part == 1) {
+		return result;
+	}
+	
+	else if (part == 2) {
+		result = 0;
+		// Fix wrong updates
+		for (const auto idx : wrong_updates) {
+			auto update = updates[idx];
+			while (!is_ordered(order_rules, update)) {
+				swap_wrong(order_rules, update);
+			}
+			result += update[update.size() / 2];
+		}
+		return result;
+	}
+	throw std::logic_error(std::format("Unknown part {}", part));
+}
+
+TEST_SUITE("Day5")
+{
+	auto small_input_file = utils::abs_exe_directory() / "input" / "day5.small.txt";
+	auto full_input_file = utils::abs_exe_directory() / "input" / "day5.full.txt";
+
+	TEST_CASE("Part1")
+	{
+		CHECK(solve_day5(1, small_input_file) == 143);
+		CHECK(solve_day5(1, full_input_file) == 4'637);
+	}
+
+	TEST_CASE("Part2")
+	{
+		CHECK(solve_day5(2, small_input_file) == 123);
+		CHECK(solve_day5(2, full_input_file) == 6'370);
+	}
+}
