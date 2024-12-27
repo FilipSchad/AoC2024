@@ -466,3 +466,139 @@ TEST_SUITE("Day5")
 		CHECK(solve_day5(2, full_input_file) == 6'370);
 	}
 }
+
+enum class Direction
+{
+	up = 0,
+	right,
+	down,
+	left
+};
+
+
+// Returns true if there is a way out, false otherwise
+bool find_way_out(std::pair<int, int> cur_pos, std::vector<std::vector<char>> field, int& visited_fields)
+{
+	Direction cur_direction = Direction::up;
+	std::vector<std::tuple<int, int, Direction>> visited{};
+	bool loop_detected = false;
+	while (true) {
+		std::pair<int, int> next_pos;
+		switch (cur_direction) {
+		case Direction::up:
+			next_pos = {cur_pos.first - 1, cur_pos.second};
+			break;
+		case Direction::right:
+			next_pos = {cur_pos.first, cur_pos.second + 1};
+			break;
+		case Direction::down:
+			next_pos = {cur_pos.first + 1, cur_pos.second};
+			break;
+		case Direction::left:
+			next_pos = {cur_pos.first, cur_pos.second - 1};
+			break;
+		default:
+			next_pos = {cur_pos.first, cur_pos.second};
+			break;
+		}
+
+		// Is it the end?
+		if (next_pos.first == -1 || next_pos.first == field.size() || next_pos.second == -1
+		    || next_pos.second == field.size()) {
+			// Next position is out of field. End.
+			break;
+		}
+
+		// There is barier - change direction and stay on the same field
+		if (field[next_pos.first][next_pos.second] == '#') {
+			cur_direction = static_cast<Direction>((static_cast<int>(cur_direction) + 1) % 4);
+			continue;
+		}
+
+		// Loop protection
+		auto next_move = std::make_tuple(next_pos.first, next_pos.second, cur_direction);
+		auto already_visited = std::ranges::find(visited, next_move);
+		if (already_visited != visited.end()) {
+			loop_detected = true;
+			break;
+		}
+		visited.emplace_back(next_move);
+
+		// Normal field
+		field[next_pos.first][next_pos.second] = 'X';
+		cur_pos = next_pos;
+	}
+
+	// Sum all X
+	visited_fields = 0;
+	for (const auto& row : field) {
+		visited_fields += static_cast<int>(std::ranges::count(row, 'X'));
+	}
+
+	return !loop_detected;
+}
+
+int solve_day6(int part, const std::filesystem::path& input_file)
+{
+	auto field = utils::load_rows<char>(input_file);
+	std::pair<int, int> cur_pos{0, 0};
+	bool found = false;
+	for (std::size_t row_idx = 0; row_idx < field.size(); ++row_idx) {
+		for (std::size_t col_idx = 0; col_idx < field[cur_pos.first].size(); ++col_idx) {
+			if (field[row_idx][col_idx] == '^') {
+				cur_pos = {row_idx, col_idx};
+				found = true;
+				break;
+			}
+		}
+		if (found) {
+			break;
+		}
+	}
+
+	if (part == 1) {
+		int result = 0;
+		if (find_way_out(cur_pos, field, result)) {
+			return result;
+		}
+		throw std::logic_error(std::format("Cannot finnish the task"));
+	}
+
+	if (part == 2) {
+		int result = 0;
+		int visited_fields = 0;
+		for (std::size_t row_idx = 0; row_idx < field.size(); ++row_idx) {
+			for (std::size_t col_idx = 0; col_idx < field[cur_pos.first].size(); ++col_idx) {
+				// Place an extra obstacle and try to find if there will be a loop
+				if (field[row_idx][col_idx] == '.') {
+					auto modified_field = field;
+					modified_field[row_idx][col_idx] = '#';
+					if (!find_way_out(cur_pos, modified_field, visited_fields)) {
+						++result;
+					}
+				}
+			}
+		}
+		return result;
+	}
+	throw std::logic_error(std::format("Unknown part {}", part));
+}
+
+TEST_SUITE("Day6")
+{
+	auto small_input_file = utils::abs_exe_directory() / "input" / "day6.small.txt";
+	auto full_input_file = utils::abs_exe_directory() / "input" / "day6.full.txt";
+
+	TEST_CASE("Part1")
+	{
+		CHECK(solve_day6(1, small_input_file) == 41);
+		CHECK(solve_day6(1, full_input_file) == 4'967);
+	}
+
+	TEST_CASE("Part2")
+	{
+		CHECK(solve_day6(2, small_input_file) == 6);
+		// Extremely inefective. Do not run unless you really need it
+		//CHECK(solve_day6(2, full_input_file) == 1'789);
+	}
+}
