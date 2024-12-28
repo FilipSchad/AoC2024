@@ -602,3 +602,96 @@ TEST_SUITE("Day6")
 		//CHECK(solve_day6(2, full_input_file) == 1'789);
 	}
 }
+
+enum class Operation {
+	mul,
+	add,
+	join
+};
+
+void get_combinations(std::size_t sampleCount,
+                      const std::vector<Operation>& options,
+                      std::vector<Operation>& stack,
+                      std::vector<std::vector<Operation>>& opers)
+{
+	if (stack.size() == sampleCount) {
+		opers.push_back(stack);
+	}
+	else {
+		// Add a new number, iterate over all possibilities
+		stack.push_back(Operation::mul);
+		for (auto op : options) {
+			stack.back() = op;
+			get_combinations(sampleCount, options, stack, opers);
+		}
+		stack.pop_back();
+	}
+}
+
+std::int64_t solve_day7(int part, const std::filesystem::path& input_file)
+{
+	std::int64_t result = 0;
+	std::ifstream in_file(input_file);
+	for (std::string line; std::getline(in_file, line);) {
+		const auto pos_dd = line.find(':');
+		auto res = std::stoll(line.substr(0, pos_dd));
+		std::stringstream num_str(line.substr(pos_dd + 2, line.size() - pos_dd));
+		std::vector<int> nums;
+		int n;
+		while (num_str >> n) {
+			nums.emplace_back(n);
+		}
+		std::vector<Operation> stack;
+		std::vector<std::vector<Operation>> opers_list;
+		if (part == 1) {
+			get_combinations(nums.size() - 1, {Operation::mul, Operation::add}, stack, opers_list);
+		}
+		else {
+			get_combinations(nums.size() - 1, {Operation::mul, Operation::add, Operation::join}, stack, opers_list);
+		}
+		bool res_found = false;
+		for (const auto& opers : opers_list) {
+			std::int64_t val = nums[0];
+			for (std::size_t i = 1; i < nums.size(); ++i) {
+				if (opers[i - 1] == Operation::mul) {
+					val *= nums[i];
+				}
+				else if (opers[i - 1] == Operation::add) {
+					val += nums[i];
+				}
+				else if (opers[i - 1] == Operation::join) {
+					std::stringstream v;
+					v << val << nums[i];
+					val = std::stoll(v.str());
+				}
+			}
+			if (val == res) {
+				res_found = true;
+				break;
+			}
+		}
+		if (res_found) {
+			result += res;
+		}
+	}
+	return result;
+}
+
+TEST_SUITE("Day7")
+{
+	auto small_input_file = utils::abs_exe_directory() / "input" / "day7.small.txt";
+	auto full_input_file = utils::abs_exe_directory() / "input" / "day7.full.txt";
+
+	TEST_CASE("Part1")
+	{
+		CHECK(solve_day7(1, small_input_file) == 3'749);
+		CHECK(solve_day7(1, full_input_file) == 14'711'933'466'277);
+	}
+
+	TEST_CASE("Part2")
+	{
+		CHECK(solve_day7(2, small_input_file) == 11'387);
+		// Extremely inefective. Do not run unless you really need it
+		//CHECK(solve_day7(2, full_input_file) == 286'580'387'663'654);
+	}
+}
