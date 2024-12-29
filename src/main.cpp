@@ -8,6 +8,7 @@
 #include <numeric>
 //#include <print>
 #include <ranges>
+#include <unordered_map>
 #include <vector>
 
 int solve_day1_part1(std::vector<int>& col1, std::vector<int>& col2)
@@ -693,5 +694,84 @@ TEST_SUITE("Day7")
 		CHECK(solve_day7(2, small_input_file) == 11'387);
 		// Extremely inefective. Do not run unless you really need it
 		//CHECK(solve_day7(2, full_input_file) == 286'580'387'663'654);
+	}
+}
+
+std::int64_t solve_day8(int part, const std::filesystem::path& input_file)
+{
+	if (part != 1 && part != 2) {
+		throw std::logic_error(std::format("Unknown part {}", part));
+	}
+
+	auto rows = utils::load_rows<char>(input_file);
+	// Load indices of antennas
+	std::unordered_map<char, std::vector<std::pair<int, int>>> ant_idx_map;
+	for (std::size_t row_idx = 0; row_idx < rows.size(); ++row_idx) {
+		for (std::size_t col_idx = 0; col_idx < rows[row_idx].size(); ++col_idx) {
+			const char c = rows[row_idx][col_idx];
+			if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) {
+				std::vector<std::pair<int, int>> a{};
+				auto [it, _] = ant_idx_map.emplace(std::make_pair(c, a));
+				it->second.push_back({row_idx, col_idx});
+			}
+		}
+	}
+	
+	// Find antinodes positions
+	std::vector<std::pair<int, int>> antinodes;
+	for (const auto& ant_idx: ant_idx_map) {
+		for (const auto ant: ant_idx.second) {
+			for (const auto ant2 : ant_idx.second) {
+				if (ant != ant2) {
+					int x = ant.first + ant.first - ant2.first;
+					int y = ant.second + ant.second - ant2.second;
+					if (part == 1) {
+						if (x >= 0 && x < rows.size() && y >= 0 && y < rows.size()
+						    && std::ranges::find(antinodes, std::make_pair(x, y)) == antinodes.end()) {
+							antinodes.push_back({x, y});
+						}
+					}
+					else {
+						auto difx = ant.first - ant2.first;
+						auto dify = ant.second - ant2.second;
+						while (x >= 0 && x < rows.size() && y >= 0 && y < rows.size()) {
+							if (std::ranges::find(antinodes, std::make_pair(x, y)) == antinodes.end()) {
+								antinodes.push_back({x, y});
+							}
+							x += difx;
+							y += dify;
+						}
+						x = ant2.first;
+						y = ant2.second;
+						while (x >= 0 && x < rows.size() && y >= 0 && y < rows.size()) {
+							if (std::ranges::find(antinodes, std::make_pair(x, y)) == antinodes.end()) {
+								antinodes.push_back({x, y});
+							}
+							x -= difx;
+							y -= dify;
+						}
+					}	
+				}
+			}
+		}
+	}
+	return antinodes.size();
+}
+
+TEST_SUITE("Day8")
+{
+	auto small_input_file = utils::abs_exe_directory() / "input" / "day8.small.txt";
+	auto full_input_file = utils::abs_exe_directory() / "input" / "day8.full.txt";
+
+	TEST_CASE("Part1")
+	{
+		CHECK(solve_day8(1, small_input_file) == 14);
+		CHECK(solve_day8(1, full_input_file) == 303);
+	}
+
+	TEST_CASE("Part2")
+	{
+		CHECK(solve_day8(2, small_input_file) == 34);
+		CHECK(solve_day8(2, full_input_file) == 1'045);
 	}
 }
