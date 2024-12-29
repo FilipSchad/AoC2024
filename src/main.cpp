@@ -775,6 +775,7 @@ TEST_SUITE("Day8")
 		CHECK(solve_day8(2, full_input_file) == 1'045);
 	}
 }
+
 std::int64_t solve_day9(int part, const std::filesystem::path& input_file)
 {
 
@@ -878,5 +879,90 @@ TEST_SUITE("Day9")
 	{
 		CHECK(solve_day9(2, small_input_file) == 2'858);
 		CHECK(solve_day9(2, full_input_file) == 6'398'096'697'992);
+	}
+}
+
+std::vector<std::pair<int, int>>
+find_next_steps(int height, const std::pair<int, int>& coord, const std::vector<std::vector<int>>& trailmap)
+{
+	++height;
+	std::vector<std::pair<int, int>> ret;
+	if (coord.first - 1 >= 0 && trailmap[coord.first - 1][coord.second] == height) {
+		ret.push_back({coord.first - 1, coord.second});
+	}
+	if (coord.first + 1 < trailmap.size() && trailmap[coord.first + 1][coord.second] == height) {
+		ret.push_back({coord.first + 1, coord.second});
+	}
+	if (coord.second - 1 >= 0 && trailmap[coord.first][coord.second - 1] == height) {
+		ret.push_back({coord.first, coord.second - 1});
+	}
+	if (coord.second + 1 < trailmap.size() && trailmap[coord.first][coord.second + 1] == height) {
+		ret.push_back({coord.first, coord.second + 1});
+	}
+	return ret;
+}
+
+std::int64_t solve_day10(int part, const std::filesystem::path& input_file)
+{
+	std::vector<std::vector<int>> trailmap;
+	std::ifstream in_file(input_file);
+	for (std::string line; std::getline(in_file, line);) {
+		std::vector<int> row;
+		for (auto c : line) {
+			row.emplace_back(c - '0');
+		}
+		trailmap.emplace_back(row);
+	}
+	// Find trailheads and convert chars to ints
+	std::vector<std::pair<int, int>> trailheads;
+	for (std::size_t row_idx = 0; row_idx < trailmap.size(); ++row_idx) {
+		for (std::size_t col_idx = 0; col_idx < trailmap[row_idx].size(); ++col_idx) {
+			if (trailmap[row_idx][col_idx] == 0) {
+				trailheads.push_back({row_idx, col_idx});
+			}
+		}
+	}
+
+	std::int64_t sum = 0;
+	// Find all reachable peaks from each trailhead
+	for (const auto& trailhead : trailheads) {
+		int height = 0;
+		auto reachable_points = find_next_steps(height++, trailhead, trailmap);
+		while (height < 9) {
+			std::vector<std::pair<int, int>> found;
+			for (const auto& point : reachable_points) {
+				auto f = find_next_steps(height, point, trailmap);
+				for (const auto& v : f) {
+					if (part == 1 && std::ranges::find(found, v) == found.end()) {
+						found.push_back(v);
+					}
+					else if (part == 2){
+						found.push_back(v);
+					}
+				}
+			}
+			++height;
+			reachable_points = found;
+		}
+		sum += reachable_points.size();
+	}
+	return sum;
+}
+
+TEST_SUITE("Day10")
+{
+	auto small_input_file = utils::abs_exe_directory() / "input" / "day10.small.txt";
+	auto full_input_file = utils::abs_exe_directory() / "input" / "day10.full.txt";
+
+	TEST_CASE("Part1")
+	{
+		CHECK(solve_day10(1, small_input_file) == 36);
+		CHECK(solve_day10(1, full_input_file) == 646);
+	}
+
+	TEST_CASE("Part2")
+	{
+		CHECK(solve_day10(2, small_input_file) == 81);
+		CHECK(solve_day10(2, full_input_file) == 1'494);
 	}
 }
