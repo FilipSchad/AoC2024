@@ -775,3 +775,108 @@ TEST_SUITE("Day8")
 		CHECK(solve_day8(2, full_input_file) == 1'045);
 	}
 }
+std::int64_t solve_day9(int part, const std::filesystem::path& input_file)
+{
+
+	std::ifstream in_file(input_file);
+	std::string input_data;
+	std::getline(in_file, input_data);
+	std::vector<std::optional<std::int64_t>> disk;
+	std::int64_t file_id = 0;
+	std::string::iterator it = input_data.begin();
+	while (it != input_data.end()) {
+		std::uint8_t sz = *it - '0';
+		++it;
+		std::uint8_t gap = 0;
+		if (it != input_data.end()) {
+			gap = *it - '0';
+			++it;
+		}
+		disk.reserve(disk.size() + sz + gap);
+		for (std::uint8_t i = 0; i < sz; ++i) {
+			disk.push_back(file_id);
+		}
+		for (std::uint8_t i = 0; i < gap; ++i) {
+			disk.push_back({});
+		}
+		++file_id;
+	}
+
+	if (part == 1) {
+		auto id_to_move = disk.end() - 1;
+		auto blank = std::find(disk.begin(), disk.end(), std::nullopt);
+		while (id_to_move > blank) {
+			std::swap(*blank, *id_to_move);
+			while (!(--id_to_move)->has_value())
+				;
+			while ((++blank)->has_value())
+				;
+		}
+
+		std::int64_t checksum = 0;
+		for (std::size_t idx = 0; idx < disk.size(); ++idx) {
+			if (!disk[idx].has_value()) {
+				break;
+			}
+			checksum += idx * disk[idx].value();
+		}
+		return checksum;
+	}
+	else if (part == 2) {
+		--file_id;
+		for (;file_id >= 0; --file_id) {
+			auto fid_start = std::find(disk.begin(), disk.end(), file_id);
+			auto fid_end = fid_start + 1;
+			while (fid_end != disk.end() && fid_end->has_value() && fid_end->value() == file_id) {
+				++fid_end;
+			}
+			auto fsize = std::distance(fid_start, fid_end);
+			auto gap_start = std::find(disk.begin(), fid_start, std::nullopt);
+			while (gap_start < fid_start) {
+				auto gap_end = gap_start + 1;
+				while (gap_end < fid_start && !gap_end->has_value()) {
+					++gap_end;
+				}
+				auto gap_size = std::distance(gap_start, gap_end);
+				if (gap_size >= fsize) {
+					for (ptrdiff_t i = 0; i < fsize; ++i) {
+						std::swap(*(fid_start + i), *(gap_start + i));
+					}
+					break;
+				}
+				if (gap_end + 1 < fid_start) {
+					gap_start = std::find(gap_end + 1, fid_start, std::nullopt);
+				}
+				else {
+					break;
+				}
+			}
+		}
+		std::int64_t checksum = 0;
+		for (std::size_t idx = 0; idx < disk.size(); ++idx) {
+			if (disk[idx].has_value()) {
+				checksum += idx * disk[idx].value();
+			}
+		}
+		return checksum;
+	}
+	throw std::logic_error(std::format("Unknown part {}", part));
+}
+
+TEST_SUITE("Day9")
+{
+	auto small_input_file = utils::abs_exe_directory() / "input" / "day9.small.txt";
+	auto full_input_file = utils::abs_exe_directory() / "input" / "day9.full.txt";
+
+	TEST_CASE("Part1")
+	{
+		CHECK(solve_day9(1, small_input_file) == 1'928);
+		CHECK(solve_day9(1, full_input_file) == 6'370'402'949'053);
+	}
+
+	TEST_CASE("Part2")
+	{
+		CHECK(solve_day9(2, small_input_file) == 2'858);
+		CHECK(solve_day9(2, full_input_file) == 6'398'096'697'992);
+	}
+}
