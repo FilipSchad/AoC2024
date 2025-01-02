@@ -966,3 +966,77 @@ TEST_SUITE("Day10")
 		CHECK(solve_day10(2, full_input_file) == 1'494);
 	}
 }
+
+std::unordered_map<std::int64_t, std::int64_t> apply_rules(std::unordered_map<std::int64_t, std::int64_t> stones)
+{
+	std::unordered_map<std::int64_t, std::int64_t> ret;
+	for (const auto& [stone, cnt] : stones) {
+		if (stone == 0) {
+			auto [it, inserted] = ret.emplace(1, cnt);
+			if (!inserted) {
+				it->second += cnt;
+			}
+		}
+		else if ((static_cast<int>(std::log10(stone)) +1) % 2 == 0) {
+			auto d = static_cast<int>(std::pow(10.0, (static_cast<int>(std::log10(stone) + 1) / 2)));
+			auto [it, inserted] = ret.emplace(stone / d, cnt);
+			if (!inserted) {
+				it->second += cnt;
+			}
+			auto [it2, inserted2] = ret.emplace(stone % d, cnt);
+			if (!inserted2) {
+				it2->second += cnt;
+			}
+		}
+		else {
+			auto [it, inserted] = ret.emplace(stone * 2024, cnt);
+			if (!inserted) {
+				it->second += cnt;
+			}
+		}
+
+	}
+	return ret;
+}
+
+std::int64_t solve_day11(int steps, const std::filesystem::path& input_file)
+{
+	std::ifstream in_file(input_file);
+	std::string line;
+	std::getline(in_file, line);
+	std::unordered_map<std::int64_t, std::int64_t> stones;
+	std::istringstream istream(line);
+	std::int64_t num;
+	while (istream >> num) {
+		auto [it, inserted] = stones.emplace(num, 1);
+		if (!inserted) {
+			it->second += 1;
+		}
+	}
+	for (int i = 0; i < steps; ++i) {
+		stones = apply_rules(stones);
+	}
+	std::int64_t sum = 0;
+	for (const auto& cnt : std::views::values(stones)) {
+		sum += cnt;
+	}
+	return sum;
+}
+
+TEST_SUITE("Day11")
+{
+	auto small_input_file = utils::abs_exe_directory() / "input" / "day11.small.txt";
+	auto full_input_file = utils::abs_exe_directory() / "input" / "day11.full.txt";
+
+	TEST_CASE("Part1")
+	{
+		CHECK(solve_day11(25, small_input_file) == 55'312);
+		CHECK(solve_day11(25, full_input_file) == 197'157);
+	}
+
+	TEST_CASE("Part2")
+	{
+		CHECK(solve_day11(75, small_input_file) == 65'601'038'650'482);
+		CHECK(solve_day11(75, full_input_file) == 234'430'066'982'597);
+	}
+}
