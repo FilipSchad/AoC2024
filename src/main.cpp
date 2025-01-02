@@ -504,8 +504,8 @@ bool find_way_out(std::pair<int, int> cur_pos, std::vector<std::vector<char>> fi
 		}
 
 		// Is it the end?
-		if (next_pos.first == -1 || next_pos.first == field.size() || next_pos.second == -1
-		    || next_pos.second == field.size()) {
+		if (next_pos.first == -1 || next_pos.first == static_cast<int>(field.size()) || next_pos.second == -1
+		    || next_pos.second == static_cast<int>(field.size())) {
 			// Next position is out of field. End.
 			break;
 		}
@@ -720,13 +720,13 @@ std::int64_t solve_day8(int part, const std::filesystem::path& input_file)
 	// Find antinodes positions
 	std::vector<std::pair<int, int>> antinodes;
 	for (const auto& ant_idx: ant_idx_map) {
-		for (const auto ant: ant_idx.second) {
-			for (const auto ant2 : ant_idx.second) {
+		for (const auto& ant: ant_idx.second) {
+			for (const auto& ant2 : ant_idx.second) {
 				if (ant != ant2) {
 					int x = ant.first + ant.first - ant2.first;
 					int y = ant.second + ant.second - ant2.second;
 					if (part == 1) {
-						if (x >= 0 && x < rows.size() && y >= 0 && y < rows.size()
+						if (x >= 0 && x < static_cast<int>(rows.size()) && y >= 0 && y < static_cast<int>(rows.size())
 						    && std::ranges::find(antinodes, std::make_pair(x, y)) == antinodes.end()) {
 							antinodes.push_back({x, y});
 						}
@@ -734,7 +734,7 @@ std::int64_t solve_day8(int part, const std::filesystem::path& input_file)
 					else {
 						auto difx = ant.first - ant2.first;
 						auto dify = ant.second - ant2.second;
-						while (x >= 0 && x < rows.size() && y >= 0 && y < rows.size()) {
+						while (x >= 0 && x < static_cast<int>(rows.size()) && y >= 0 && y < static_cast<int>(rows.size())) {
 							if (std::ranges::find(antinodes, std::make_pair(x, y)) == antinodes.end()) {
 								antinodes.push_back({x, y});
 							}
@@ -743,7 +743,7 @@ std::int64_t solve_day8(int part, const std::filesystem::path& input_file)
 						}
 						x = ant2.first;
 						y = ant2.second;
-						while (x >= 0 && x < rows.size() && y >= 0 && y < rows.size()) {
+						while (x >= 0 && x < static_cast<int>(rows.size()) && y >= 0 && y < static_cast<int>(rows.size())) {
 							if (std::ranges::find(antinodes, std::make_pair(x, y)) == antinodes.end()) {
 								antinodes.push_back({x, y});
 							}
@@ -869,6 +869,7 @@ TEST_SUITE("Day9")
 	auto small_input_file = utils::abs_exe_directory() / "input" / "day9.small.txt";
 	auto full_input_file = utils::abs_exe_directory() / "input" / "day9.full.txt";
 
+	// Part one is failing for GCC - TODO: find out why
 	TEST_CASE("Part1")
 	{
 		CHECK(solve_day9(1, small_input_file) == 1'928);
@@ -890,13 +891,13 @@ find_next_steps(int height, const std::pair<int, int>& coord, const std::vector<
 	if (coord.first - 1 >= 0 && trailmap[coord.first - 1][coord.second] == height) {
 		ret.push_back({coord.first - 1, coord.second});
 	}
-	if (coord.first + 1 < trailmap.size() && trailmap[coord.first + 1][coord.second] == height) {
+	if (coord.first + 1 < static_cast<int>(trailmap.size()) && trailmap[coord.first + 1][coord.second] == height) {
 		ret.push_back({coord.first + 1, coord.second});
 	}
 	if (coord.second - 1 >= 0 && trailmap[coord.first][coord.second - 1] == height) {
 		ret.push_back({coord.first, coord.second - 1});
 	}
-	if (coord.second + 1 < trailmap.size() && trailmap[coord.first][coord.second + 1] == height) {
+	if (coord.second + 1 < static_cast<int>(trailmap.size()) && trailmap[coord.first][coord.second + 1] == height) {
 		ret.push_back({coord.first, coord.second + 1});
 	}
 	return ret;
